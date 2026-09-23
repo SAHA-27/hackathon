@@ -1,54 +1,125 @@
 import React, { useEffect, useState } from 'react';
-import { getRequests } from '../store';
+import { getRequests, getSystemState, setLockdown, addRequestAsync } from '../store';
 import type { AgentRequest } from '../types';
-import { Shield, CheckCircle, AlertTriangle, XCircle, ArrowRight, Server, Database, Bot } from 'lucide-react';
+import { Shield, CheckCircle, AlertTriangle, XCircle, ArrowRight, Server, Database, Bot, Lock, ShieldAlert, Target, ShieldCheck, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const [requests, setRequests] = useState<AgentRequest[]>([]);
+  const [systemState, setSystemState] = useState({ lockdown: false, postureScore: 87 });
+  const [isTrafficLive, setIsTrafficLive] = useState(false);
 
   useEffect(() => {
-    setRequests(getRequests());
+    getRequests().then(setRequests);
+    getSystemState().then(setSystemState);
   }, []);
+
+  useEffect(() => {
+    let interval: any;
+    if (isTrafficLive && !systemState.lockdown) {
+      interval = setInterval(async () => {
+        const agents = ['HR Agent', 'Finance Agent', 'CRM Agent', 'IT Operations Bot', 'Sales & Marketing Bot', 'Unknown Agent'];
+        const actions = ['View employee details', 'Update salary', 'Delete employee', 'Search employees', 'View financial records', 'Provision new server', 'Delete production database', 'View campaign metrics', 'Export lead contact list', 'Launch mass email campaign'];
+        const targets = ['HR System', 'Finance System', 'CRM System', 'Cloud Infrastructure API', 'Marketing Automation Platform', 'Sales CRM System', 'Legacy DB (Honeypot Decoy)'];
+        const networks = ['Corporate VPN (Secured)', 'AWS US-East (Trusted Cloud)', 'Public Wi-Fi (Unsecured)', 'Tor Anonymity Network', 'Known Malicious Subnet (High Risk)'];
+        
+        const randomAgent = agents[Math.floor(Math.random() * agents.length)];
+        const randomAction = actions[Math.floor(Math.random() * actions.length)];
+        const randomTarget = targets[Math.floor(Math.random() * targets.length)];
+        const randomNetwork = networks[Math.floor(Math.random() * networks.length)];
+        const isSensitive = Math.random() > 0.7;
+        const isOutsideHours = Math.random() > 0.8;
+
+        await addRequestAsync(randomAgent, randomAction, randomTarget, randomNetwork, isSensitive, isOutsideHours);
+        getRequests().then(setRequests);
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [isTrafficLive, systemState.lockdown]);
 
   const total = requests.length;
   const allowed = requests.filter(r => r.status.includes('Allowed')).length;
   const pending = requests.filter(r => r.status === 'Pending Approval').length;
   const blocked = requests.filter(r => r.status === 'Blocked' || r.status === 'Rejected').length;
 
+  const handleLockdown = async () => {
+    if (systemState.lockdown) {
+      await setLockdown(false);
+      setSystemState({ ...systemState, lockdown: false });
+    } else {
+      if (confirm("EMERGENCY: Suspend all AI agent communication?")) {
+        await setLockdown(true);
+        setSystemState({ ...systemState, lockdown: true });
+        setIsTrafficLive(false);
+      }
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-start mb-10">
+    <div className="max-w-7xl mx-auto space-y-10">
+      
+      {/* Executive Header */}
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-1">Dynamic Agent Security Gateway</h1>
-          <p className="text-slate-500 font-medium">Enterprise AI Security & Governance Layer</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">Executive Security View</h1>
+          <p className="text-slate-400 font-medium">Dynamic Agent Security Gateway</p>
         </div>
-        <Link to="/simulate" className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2">
-          <Bot className="w-5 h-5 text-blue-400" />
-          Simulate Request
-        </Link>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setIsTrafficLive(!isTrafficLive)}
+            className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${
+              isTrafficLive 
+                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_20px_rgba(16,185,129,0.5)] animate-pulse' 
+                : 'bg-slate-900 hover:bg-slate-800 text-emerald-500 border border-emerald-500/30'
+            }`}
+          >
+            <Activity className="w-5 h-5" />
+            {isTrafficLive ? 'AUTO-PILOT ON' : 'SIMULATE LIVE TRAFFIC'}
+          </button>
+          <button 
+            onClick={handleLockdown}
+            className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${
+              systemState.lockdown 
+                ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-[0_0_20px_rgba(244,63,94,0.5)] animate-pulse' 
+                : 'bg-slate-900 hover:bg-slate-800 text-rose-500 border border-rose-500/30'
+            }`}
+          >
+            <Lock className="w-5 h-5" />
+            {systemState.lockdown ? 'GATEWAY LOCKDOWN ACTIVE' : 'EMERGENCY LOCKDOWN'}
+          </button>
+          <Link to="/simulate" className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] flex items-center gap-2">
+            <Target className="w-5 h-5 text-indigo-200" />
+            Simulate Attack / Request
+          </Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-6 mb-10">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-          <div className="text-sm font-semibold text-slate-500 mb-2 tracking-wide uppercase">Total Requests</div>
-          <div className="text-4xl font-extrabold text-slate-900">{total > 0 ? total : 126}</div>
+      {/* Top Level Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="col-span-1 bg-slate-900/50 p-6 rounded-2xl border border-slate-800 shadow-lg backdrop-blur-sm flex flex-col items-center justify-center relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-4 opacity-5"><ShieldCheck className="w-24 h-24" /></div>
+           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Security Posture</div>
+           <div className="text-5xl font-black text-emerald-400 mb-2">{systemState.postureScore}%</div>
+           <div className="text-xs text-emerald-500/70 font-medium">Excellent rating</div>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-          <div className="text-sm font-semibold text-emerald-600 mb-2 tracking-wide uppercase flex items-center gap-1.5"><CheckCircle className="w-4 h-4"/> Allowed</div>
-          <div className="text-4xl font-extrabold text-slate-900">{allowed > 0 ? allowed : 93}</div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-          <div className="text-sm font-semibold text-amber-600 mb-2 tracking-wide uppercase flex items-center gap-1.5"><AlertTriangle className="w-4 h-4"/> Pending</div>
-          <div className="text-4xl font-extrabold text-slate-900">{pending > 0 ? pending : 12}</div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-rose-50 rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-          <div className="text-sm font-semibold text-rose-600 mb-2 tracking-wide uppercase flex items-center gap-1.5"><XCircle className="w-4 h-4"/> Blocked</div>
-          <div className="text-4xl font-extrabold text-slate-900">{blocked > 0 ? blocked : 21}</div>
+
+        <div className="col-span-4 grid grid-cols-4 gap-6">
+          <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 shadow-lg backdrop-blur-sm">
+            <div className="text-xs font-bold text-slate-500 mb-2 tracking-wider uppercase">Total Requests</div>
+            <div className="text-4xl font-black text-white">{total > 0 ? total : 126}</div>
+          </div>
+          <div className="bg-slate-900/50 p-6 rounded-2xl border border-emerald-500/20 shadow-lg backdrop-blur-sm relative overflow-hidden">
+            <div className="text-xs font-bold text-emerald-500 mb-2 tracking-wider uppercase flex items-center gap-1.5"><CheckCircle className="w-4 h-4"/> Allowed</div>
+            <div className="text-4xl font-black text-white">{allowed > 0 ? allowed : 93}</div>
+          </div>
+          <div className="bg-slate-900/50 p-6 rounded-2xl border border-amber-500/20 shadow-lg backdrop-blur-sm relative overflow-hidden">
+            <div className="text-xs font-bold text-amber-500 mb-2 tracking-wider uppercase flex items-center gap-1.5"><AlertTriangle className="w-4 h-4"/> Pending</div>
+            <div className="text-4xl font-black text-white">{pending > 0 ? pending : 12}</div>
+          </div>
+          <div className="bg-slate-900/50 p-6 rounded-2xl border border-rose-500/20 shadow-lg backdrop-blur-sm relative overflow-hidden">
+            <div className="text-xs font-bold text-rose-500 mb-2 tracking-wider uppercase flex items-center gap-1.5"><ShieldAlert className="w-4 h-4"/> Blocked Threats</div>
+            <div className="text-4xl font-black text-white">{blocked > 0 ? blocked : 21}</div>
+          </div>
         </div>
       </div>
 

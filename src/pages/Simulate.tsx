@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { evaluateRequest, addRequest } from '../store';
+import { addRequestAsync } from '../store';
 import { Shield, Lock, Activity, CheckCircle, AlertTriangle, XCircle, Server, Key } from 'lucide-react';
 import type { RequestStatus } from '../types';
 
@@ -7,6 +7,7 @@ const Simulate = () => {
   const [agent, setAgent] = useState('HR Agent');
   const [action, setAction] = useState('View employee details');
   const [targetApi, setTargetApi] = useState('HR System');
+  const [network, setNetwork] = useState('Corporate VPN (Secured)');
   const [outsideHours, setOutsideHours] = useState(false);
   const [sensitiveData, setSensitiveData] = useState(false);
   
@@ -14,21 +15,21 @@ const Simulate = () => {
   const [evaluationStep, setEvaluationStep] = useState(0);
   const [result, setResult] = useState<any>(null);
 
-  const handleEvaluate = () => {
+  const handleEvaluate = async () => {
     setIsEvaluating(true);
     setEvaluationStep(1);
     setResult(null);
 
-    const evalResult = evaluateRequest(agent, action, targetApi, sensitiveData, outsideHours);
+    // Call the real backend endpoint
+    const { newReq, factors } = await addRequestAsync(agent, action, targetApi, network, sensitiveData, outsideHours);
 
-    // Simulate pipeline visually
+    // Simulate pipeline visually for demo effect
     setTimeout(() => setEvaluationStep(2), 800);
     setTimeout(() => setEvaluationStep(3), 1600);
     setTimeout(() => setEvaluationStep(4), 2400);
     setTimeout(() => {
       setEvaluationStep(5);
       setIsEvaluating(false);
-      const { newReq, factors } = addRequest({ ...evalResult, agent, action, targetApi });
       setResult({ ...newReq, factors });
     }, 3000);
   };
@@ -51,6 +52,8 @@ const Simulate = () => {
                 <option>HR Agent</option>
                 <option>Finance Agent</option>
                 <option>CRM Agent</option>
+                <option>IT Operations Bot</option>
+                <option>Sales & Marketing Bot</option>
                 <option>Unknown Agent</option>
               </select>
             </div>
@@ -67,6 +70,13 @@ const Simulate = () => {
                 <option>Update customer records</option>
                 <option>View financial records</option>
                 <option>Delete financial record</option>
+                <option>View server status</option>
+                <option>Provision new server</option>
+                <option>Delete production database</option>
+                <option>View campaign metrics</option>
+                <option>Export lead contact list</option>
+                <option>Launch mass email campaign</option>
+                <option>Delete campaign data</option>
               </select>
             </div>
 
@@ -78,6 +88,21 @@ const Simulate = () => {
                 <option>CRM System</option>
                 <option>Employee Database</option>
                 <option>Customer Database</option>
+                <option>Cloud Infrastructure API</option>
+                <option>Marketing Automation Platform</option>
+                <option>Sales CRM System</option>
+                <option>Legacy DB (Honeypot Decoy)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1.5">Network Origin</label>
+              <select className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all" value={network} onChange={e => setNetwork(e.target.value)}>
+                <option>Corporate VPN (Secured)</option>
+                <option>AWS US-East (Trusted Cloud)</option>
+                <option>Public Wi-Fi (Unsecured)</option>
+                <option>Tor Anonymity Network</option>
+                <option>Known Malicious Subnet (High Risk)</option>
               </select>
             </div>
 
@@ -207,10 +232,10 @@ const Simulate = () => {
 
                 <div className="space-y-1.5 mt-4 pt-4 border-t border-slate-800">
                   <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Risk Factors Identified:</div>
-                  {result.factors.map((f: string, i: number) => (
+                  {result.factors.map((f: any, i: number) => (
                     <div key={i} className="text-sm text-slate-300 font-mono flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-                      {f}
+                      {f.factor}
                     </div>
                   ))}
                   {result.factors.length === 0 && (

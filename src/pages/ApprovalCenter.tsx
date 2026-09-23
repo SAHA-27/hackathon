@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getRequests, saveRequests, getLogs, saveLogs } from '../store';
+import { getRequests, updateRequestStatus, getLogs } from '../store';
 import type { AgentRequest } from '../types';
 import { Check, X, CheckCircle2, ShieldAlert } from 'lucide-react';
 
@@ -7,49 +7,19 @@ const ApprovalCenter = () => {
   const [requests, setRequests] = useState<AgentRequest[]>([]);
 
   useEffect(() => {
-    setRequests(getRequests());
+    getRequests().then(setRequests);
   }, []);
 
   const pendingRequests = requests.filter(r => r.status === 'Pending Approval');
 
-  const handleApprove = (id: string) => {
-    const updated = requests.map(r => r.id === id ? { ...r, status: 'Allowed / Executed' as const } : r);
-    setRequests(updated);
-    saveRequests(updated);
-    
-    const logs = getLogs();
-    const req = updated.find(r => r.id === id)!;
-    logs.unshift({
-      logId: `LOG-${Math.floor(Math.random() * 10000)}`,
-      time: new Date().toISOString(),
-      agent: 'Human Admin',
-      action: 'Approved Request',
-      targetSystem: req.id,
-      riskScore: req.riskScore,
-      decision: 'Allowed / Executed',
-      reason: 'Manual approval granted by administrator.'
-    });
-    saveLogs(logs);
+  const handleApprove = async (id: string) => {
+    await updateRequestStatus(id, 'Allowed / Executed', 'Manual approval granted by administrator.');
+    setRequests(await getRequests());
   };
 
-  const handleReject = (id: string) => {
-    const updated = requests.map(r => r.id === id ? { ...r, status: 'Rejected' as const } : r);
-    setRequests(updated);
-    saveRequests(updated);
-
-    const logs = getLogs();
-    const req = updated.find(r => r.id === id)!;
-    logs.unshift({
-      logId: `LOG-${Math.floor(Math.random() * 10000)}`,
-      time: new Date().toISOString(),
-      agent: 'Human Admin',
-      action: 'Rejected Request',
-      targetSystem: req.id,
-      riskScore: req.riskScore,
-      decision: 'Rejected',
-      reason: 'Manual rejection by administrator.'
-    });
-    saveLogs(logs);
+  const handleReject = async (id: string) => {
+    await updateRequestStatus(id, 'Rejected', 'Manual rejection by administrator.');
+    setRequests(await getRequests());
   };
 
   return (
@@ -93,18 +63,29 @@ const ApprovalCenter = () => {
                   </div>
                 </div>
 
-                <div className="text-sm text-amber-200/80 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 flex items-start gap-3">
-                  <ShieldAlert className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                  <p><span className="font-bold text-amber-400">Reason for hold:</span> {req.reason}</p>
+                <div className="text-sm text-amber-200/80 bg-amber-500/10 p-4 rounded-xl border border-amber-500/20 flex flex-col gap-2">
+                  <div className="flex items-start gap-3">
+                    <ShieldAlert className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p><span className="font-bold text-amber-400">Triggered Policy:</span> {req.reason}</p>
+                  </div>
+                  <div className="ml-8 text-slate-300 font-mono">
+                    <span className="font-bold text-slate-400">Potential Impact:</span> Unauthorized state mutation on {req.targetApi}.
+                  </div>
                 </div>
               </div>
               
-              <div className="flex flex-row md:flex-col gap-3 w-full md:w-48">
-                <button onClick={() => handleApprove(req.id)} className="flex-1 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-3 px-4 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+              <div className="flex flex-col gap-3 w-full md:w-56">
+                <button onClick={() => handleApprove(req.id)} className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 py-3 px-4 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                   <Check className="w-5 h-5" /> APPROVE
                 </button>
-                <button onClick={() => handleReject(req.id)} className="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 hover:border-rose-500/50 py-3 px-4 rounded-xl font-bold transition-all">
+                <button onClick={() => handleReject(req.id)} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 hover:border-rose-500/50 py-3 px-4 rounded-xl font-bold transition-all">
                   <X className="w-5 h-5" /> REJECT
+                </button>
+                <button onClick={() => {
+                  updateRequestStatus(req.id, 'Awaiting Agent Justification', 'Requested more info from agent.');
+                  getRequests().then(setRequests);
+                }} className="w-full text-xs font-bold text-indigo-400 hover:text-indigo-300 py-2 transition-colors">
+                  REQUEST MORE INFO
                 </button>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getRequests, saveRequests, getLogs, saveLogs } from '../store';
+import { getRequests, updateRequestStatus, getLogs } from '../store';
 import type { AgentRequest } from '../types';
 import { CheckCircle, AlertTriangle, XCircle, Eye, Check, X } from 'lucide-react';
 
@@ -9,55 +9,20 @@ const LiveRequests = () => {
   const [selectedReq, setSelectedReq] = useState<AgentRequest | null>(null);
 
   useEffect(() => {
-    setRequests(getRequests());
+    getRequests().then(setRequests);
   }, []);
 
   const pendingRequests = requests.filter(r => r.status === 'Pending Approval');
 
-  const handleApprove = (id: string) => {
-    const updated = requests.map(r => r.id === id ? { ...r, status: 'Allowed / Executed' as const } : r);
-    setRequests(updated);
-    saveRequests(updated);
-    
-    // Add to logs
-    const logs = getLogs();
-    const req = updated.find(r => r.id === id)!;
-    logs.unshift({
-      logId: `LOG-${Math.floor(Math.random() * 10000)}`,
-      time: new Date().toISOString(),
-      agent: 'Human Admin',
-      action: 'Approved Request',
-      targetSystem: req.id,
-      riskScore: req.riskScore,
-      decision: 'Allowed / Executed',
-      reason: 'Manual approval granted by administrator.'
-    });
-    saveLogs(logs);
-    
-    // Toast would go here
+  const handleApprove = async (id: string) => {
+    await updateRequestStatus(id, 'Allowed / Executed', 'Manual approval granted by administrator.');
+    setRequests(await getRequests());
     alert('Request Approved successfully');
   };
 
-  const handleReject = (id: string) => {
-    const updated = requests.map(r => r.id === id ? { ...r, status: 'Rejected' as const } : r);
-    setRequests(updated);
-    saveRequests(updated);
-
-    // Add to logs
-    const logs = getLogs();
-    const req = updated.find(r => r.id === id)!;
-    logs.unshift({
-      logId: `LOG-${Math.floor(Math.random() * 10000)}`,
-      time: new Date().toISOString(),
-      agent: 'Human Admin',
-      action: 'Rejected Request',
-      targetSystem: req.id,
-      riskScore: req.riskScore,
-      decision: 'Rejected',
-      reason: 'Manual rejection by administrator.'
-    });
-    saveLogs(logs);
-
+  const handleReject = async (id: string) => {
+    await updateRequestStatus(id, 'Rejected', 'Manual rejection by administrator.');
+    setRequests(await getRequests());
     alert('Request Rejected');
   };
 
@@ -204,6 +169,11 @@ const LiveRequests = () => {
                 <div>
                   <div className="text-slate-500 mb-1">Target API</div>
                   <div className="font-medium">{selectedReq.targetApi}</div>
+                </div>
+                {/* Notice I don't know if selectedReq has network saved, but I'll add it anyway just in case, or show 'Unknown' */}
+                <div>
+                  <div className="text-slate-500 mb-1">Network Origin</div>
+                  <div className="font-medium">Evaluated in Backend</div>
                 </div>
               </div>
 

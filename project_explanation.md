@@ -1,72 +1,58 @@
 # Dynamic Agent Security Gateway
 
-This project is a clean, interactive frontend prototype built for a cybersecurity hackathon. It demonstrates a security layer positioned between AI agents and enterprise APIs. Its primary purpose is to authenticate, authorize, and evaluate the risk of every agent request before granting access to critical enterprise systems (like HR, Finance, or CRM databases).
+**"Secure Every AI Agent Action Before It Reaches Enterprise Systems"**
 
-## Project Overview
+This project is an advanced, enterprise-grade frontend prototype built for a cybersecurity hackathon. It demonstrates a **Zero-Trust Security Gateway** positioned between AI agents and enterprise APIs. Rather than just protecting APIs from external users, this platform protects your infrastructure from the actions performed by autonomous AI agents.
 
-In this phase of the prototype, we focused on building a polished, client-side only (React + LocalStorage) MVP that successfully visualizes the lifecycle of an AI agent's request. We avoided complex backend systems, real databases, and heavy authentication systems to ensure a fast, robust, and visually convincing live demo.
+## Core Architecture & The Zero-Trust Pipeline
 
-### The Core Flow Demonstrated
+Every simulated request in this platform follows a strict, zero-trust lifecycle:
+`AI Agent → Gateway → Authentication → Least-Privilege Authorization → Anomaly Detection & Risk Engine → Decision → Human Oversight → Enterprise API`
 
-1. **Authentication:** Verifies if the requesting AI agent is registered and trusted.
-2. **Authorization:** Checks if the agent possesses the permissions necessary for the requested action.
-3. **Risk Engine:** Computes a risk score (0 to 100) based on factors like action sensitivity, agent identity, and time of request.
-4. **Decision:** 
-   - Low risk (< 50) → **Allowed**
-   - Medium risk (50 - 85) → **Pending Approval (Human in the loop)**
-   - High risk (> 85) or Unauthorized → **Blocked**
-5. **Audit Logging:** Every simulated request and human decision is permanently recorded in the activity logs.
+## Enterprise-Grade Features Built
 
-## What We Have Built
+### 1. Security Posture & Executive Dashboard
+- **Executive Security View:** A top-level dashboard tailored for security managers.
+- **Security Posture Score:** A dynamic metric representing the overall health of the gateway's defenses.
+- **Emergency Gateway Lockdown:** A prominent "Kill Switch". When activated, all AI-to-Enterprise communication is instantly suspended, and any incoming requests are blocked with a maximum risk score of 100.
 
-The application was built using **React, TypeScript, Vite, and Tailwind CSS**. It contains four main screens tailored exactly for a demo sequence.
+### 2. Explainable Risk Engine & Behavioral Anomaly Detection
+- Computes a dynamic risk score (0-100) based on factors like action sensitivity, agent identity, target system, and business hours.
+- **Explainable AI:** The system doesn't just output a score; it outputs an array of exact risk factors (e.g., "+45 High sensitivity operation", "+20 Sensitive data access requested") so security teams know exactly *why* a decision was made.
+- **Behavioral Anomaly Detection:** Establishes baselines for agents. For example, if a normally safe `HR Agent` attempts a highly destructive `Delete` operation, the engine flags this as a behavioral anomaly and penalizes the risk score.
 
-### 1. Dashboard (`src/pages/Dashboard.tsx`)
-- Provides a high-level overview of the security gateway's operations.
-- Contains metric cards tracking Total Requests, Allowed, Pending Approval, and Blocked actions.
-- Features a **Security Flow diagram** illustrating the path: `AI Agent → Gateway → Decision → Enterprise API`.
-- Displays a table of the most recent requests and their live statuses.
+### 3. Human-in-the-Loop (HITL) Intelligence
+- Medium-risk operations are caught and placed in the **Approval Center**.
+- Human administrators can view the potential impact, triggered policies, and risk factors before deciding.
+- **Awaiting Agent Justification:** Instead of a simple binary Approve/Reject, admins can "Request More Info", pushing the request into a holding state requiring justification from the AI agent developer.
 
-### 2. Simulate Agent Request (`src/pages/Simulate.tsx`)
-- The core interactive piece of the prototype.
-- Provides a form allowing the user to select an Agent (HR, Finance, Unknown), an Action, a Target System, and risk modifiers (outside business hours, sensitive data).
-- Simulates an animated, multi-step evaluation process:
-  1. Authentication
-  2. Authorization
-  3. Risk Analysis
-  4. Final Decision
-- Results in a comprehensive breakdown explaining the reasoning behind the computed risk score and the final decision.
-- Automatically saves this request to LocalStorage, making it instantly available in the live tracking and log screens.
+### 4. Agent Identity & Least Privilege Management
+- A dedicated **Agents & Policies** directory detailing registered AI agents.
+- Enforces the principle of **Least Privilege** by explicitly mapping out exactly which API endpoints each agent is authorized to call.
 
-### 3. Live Requests & Approval Center (`src/pages/LiveRequests.tsx`)
-- **Live Requests Tab:** Shows a real-time table of all evaluated requests. Clicking "View Details" opens a modal displaying the exact checks and reasoning for that request.
-- **Approval Queue Tab:** Specifically filters for requests sitting in a "Pending Approval" state (usually medium risk). It provides interactive `Approve` and `Reject` buttons, simulating human-in-the-loop intervention.
+### 5. Immutable Audit Logging
+- Every single evaluation, automated block, and human decision is permanently recorded in the **Activity Logs**, providing a complete, filterable security audit trail.
 
-### 4. Activity Logs (`src/pages/ActivityLogs.tsx`)
-- An immutable audit trail proving that the system tracks every AI action and human decision.
-- Contains filtering capabilities (All, Allowed, Pending, Blocked).
-- Displays timestamps, unique log IDs, involved agents, risk scores, and the documented reasoning for every recorded event.
-
-## Technical Details
-
-- **State Management:** We used a lightweight data store located at `src/store.ts`. It acts as a wrapper around the browser's `localStorage` API, seeding the application with initial mock data and ensuring new simulations persist across page reloads.
-- **Styling:** Fully styled with **Tailwind CSS**. We utilized a dark navy theme for the sidebar and clean slate/white components for data cards to achieve a professional cybersecurity aesthetic.
-- **Icons:** We used `lucide-react` for clean, consistent iconography throughout the prototype.
-- **Routing:** Handled smoothly on the client side using `react-router-dom`.
+## Tech Stack
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS (Dark Mode Glassmorphism Theme)
+- **Icons:** Lucide React
+- **Data Layer:** LocalStorage (Mocking backend services to ensure a flawless, zero-latency 5-minute hackathon demo)
+- **Routing:** React Router DOM
 
 ## How to Run the Demo
 
-Since the dependencies are installed and the project is fully bootstrapped, you can run the development server via:
-
 ```bash
+npm install
 npm run dev
 ```
 
 ### Recommended Hackathon Presentation Sequence:
 
-1. **Dashboard:** Introduce the concept—all AI agents must pass through this checkpoint.
-2. **Simulation (Low Risk):** Run an *HR Agent* viewing *employee details*. Show it seamlessly passing (Allowed).
-3. **Simulation (Medium Risk):** Run an *HR Agent* attempting to *update a salary*. Show it getting caught by the Risk Engine (Pending Approval).
-4. **Approval Center:** Navigate to the Approval Queue and manually approve the salary update as a human admin.
-5. **Simulation (High Risk):** Run an *Unknown Agent* trying to *delete an employee*. Show the gateway instantly blocking it due to failed authentication and high risk.
-6. **Activity Logs:** Conclude by showing the logs, proving all of the above actions were permanently audited.
+1. **Dashboard & Lockdown:** Open the Dashboard. Explain the Security Posture. Click the **EMERGENCY LOCKDOWN** button to demonstrate crisis response.
+2. **Lockdown Simulation:** Go to Simulate Request. Run any request. Show the system instantly blocking it with a 100/100 score due to the lockdown.
+3. **Low Risk (Normal Operation):** Turn off lockdown. Simulate an *HR Agent* viewing *employee details*. Show it seamlessly passing (Allowed).
+4. **Behavioral Anomaly (High Risk):** Simulate an *HR Agent* attempting to *delete an employee*. Show the Risk Engine detecting an anomaly (destructive action from a read-heavy agent) and catching it.
+5. **Human-in-the-loop (Medium Risk):** Simulate an *HR Agent* attempting to *update a salary*. Show it getting caught by the Risk Engine (Pending Approval).
+6. **Approval Center:** Navigate to the Approval Queue. Demonstrate the "Request More Info" intelligence feature, showing true human oversight.
+7. **Zero-Trust Block:** Simulate an *Unknown Agent* trying to *delete an employee*. Show the gateway instantly blocking it due to failed authentication.
+8. **Activity Logs:** Conclude by showing the logs, proving all automated and human actions were permanently audited.

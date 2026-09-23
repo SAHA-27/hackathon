@@ -8,7 +8,7 @@ const ActivityLogs = () => {
   const [filter, setFilter] = useState<'All' | 'Allowed' | 'Pending' | 'Blocked'>('All');
 
   useEffect(() => {
-    setLogs(getLogs());
+    getLogs().then(setLogs);
   }, []);
 
   const filteredLogs = logs.filter(log => {
@@ -18,6 +18,40 @@ const ActivityLogs = () => {
     if (filter === 'Blocked') return log.decision === 'Blocked' || log.decision === 'Rejected';
     return true;
   });
+
+  const exportToCSV = () => {
+    if (filteredLogs.length === 0) return;
+    
+    // Create CSV header
+    const headers = ['Log ID', 'Time', 'Agent', 'Action', 'Target System', 'Risk Score', 'Decision', 'Reason'];
+    
+    // Create CSV rows
+    const csvRows = filteredLogs.map(log => {
+      return [
+        log.logId,
+        new Date(log.time).toISOString(),
+        `"${log.agent}"`,
+        `"${log.action}"`,
+        `"${log.targetSystem}"`,
+        log.riskScore,
+        `"${log.decision}"`,
+        `"${log.reason}"`
+      ].join(',');
+    });
+    
+    // Combine header and rows
+    const csvString = [headers.join(','), ...csvRows].join('\n');
+    
+    // Create download link
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `security_audit_logs_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -34,25 +68,33 @@ const ActivityLogs = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex items-center gap-4 bg-slate-50">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-            <Filter className="w-4 h-4" /> Filter by Decision:
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+              <Filter className="w-4 h-4" /> Filter by Decision:
+            </div>
+            <div className="flex gap-2">
+              {['All', 'Allowed', 'Pending', 'Blocked'].map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f as any)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    filter === f 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {['All', 'Allowed', 'Pending', 'Blocked'].map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f as any)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  filter === f 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
+          <button 
+            onClick={exportToCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-lg transition-colors"
+          >
+            Export to CSV
+          </button>
         </div>
 
         <div className="overflow-x-auto">
