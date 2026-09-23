@@ -1,6 +1,6 @@
 import type { AgentRequest, LogEntry } from './types';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://hackathon-5-9num.onrender.com/api';
 
 export const MOCK_AGENTS = [
   { id: 'AGT-HR-001', name: 'HR Agent', trustLevel: 'Trusted', permissions: ['View employee details', 'Search employees', 'Read HR records'], status: 'ACTIVE' },
