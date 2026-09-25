@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Shield, Key, ClipboardList, List, PlayCircle, LayoutDashboard, ShieldCheck, CheckCircle2, FileWarning } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Simulate from './pages/Simulate';
